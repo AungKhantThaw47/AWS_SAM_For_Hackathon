@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  AWS_SAM_For_Hackathon
+
+  Sample SAM Template for AWS_SAM_For_Hackathon
+  
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  AuthApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: AuthApi
+      StageName: Prod
+      Cors: "'*'"
+
+
+  AuthPhoneNumberModel:
+    Type: AWS::ApiGateway::Model
+    Properties:
+      RestApiId: 
+        Ref: AuthApi
+      ContentType: application/json
+      Description: Schema for phone number to send in need of authentication
+      Name: AuthPhoneNumber
+      Schema:
+        $schema: 'http://json-schema.org/draft-04/schema#'
+        title: AuthPhoneNumberModel
+        type: integer
+
+
+  AuthFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: hello-world/
+      Handler: app.lambdaHandler
+      Runtime: nodejs12.x
+      Events:
+        PhoneNumber:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /phoneNumber
+            Method:   
+            RestApiId:
+              Ref: AuthApi
+        Code:
+          Type: Api
+          Properties:
+            Path: /code
+            Method: get
+            RestApiId:
+              Ref: AuthApi
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  AuthPhoneNumberApi:
+    Description: "To send phone number"
+    Value: !Sub "https://${AuthApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/phoneNumber"
+  AuthCodeApi:
+    Description: "To send authentication code"
+    Value: !Sub "https://${AuthApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/code"
+  AuthFunction:
+    Description: "Hello World Lambda Function ARN"
+    Value: !GetAtt AuthFunction.Arn
+  AuthFunctionIamRole:
+    Description: "Implicit IAM Role created for Hello World function"
+    Value: !GetAtt AuthFunctionRole.Arn
